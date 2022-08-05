@@ -1,74 +1,33 @@
-[![Build status](https://github.com/git/git/workflows/CI/badge.svg)](https://github.com/git/git/actions?query=branch%3Amaster+event%3Apush)
+A Time-Based Shard of the Git Repository
+========================================
 
-Git - fast, scalable, distributed revision control system
-=========================================================
+This repository is only an example of how one can shard a repository based on time.
 
-Git is a fast, scalable, distributed revision control system with an
-unusually rich command set that provides both high-level operations
-and full access to internals.
+The root commit of this repository shares a root tree with Git's `v2.37.0` tag. You can create a combined version of the history using these commands:
 
-Git is an Open Source project covered by the GNU General Public
-License version 2 (some parts of it are under different licenses,
-compatible with the GPLv2). It was originally written by Linus
-Torvalds with help of a group of hackers around the net.
+```ShellSession
+$ git clone https://github.com/git/git git-old
+$ git clone https://github.com/derrickstolee/git git-new
 
-Please read the file [INSTALL][] for installation instructions.
+$ echo "$(pwd)/git-old/.git/objects >git-new/.git/objects/info/alternates
+$ cd git-new
 
-Many Git online resources are accessible from <https://git-scm.com/>
-including full documentation and Git related tools.
+$ GIT_REPLACE_REF_BASE=refs/shard git replace \
+                  b49d35c8288501462ca1a008b3bb2efb9b4c4a9d \
+                  e4a4b31577c7419497ac30cebe30d755b97752c5
 
-See [Documentation/gittutorial.txt][] to get started, then see
-[Documentation/giteveryday.txt][] for a useful minimum set of commands, and
-`Documentation/git-<commandname>.txt` for documentation of each command.
-If git has been correctly installed, then the tutorial can also be
-read with `man gittutorial` or `git help tutorial`, and the
-documentation of each command with `man git-<commandname>` or `git help
-<commandname>`.
+$ git log --oneline
+b49d35c828 (HEAD -> main) new root commit
 
-CVS users may also want to read [Documentation/gitcvs-migration.txt][]
-(`man gitcvs-migration` or `git help cvs-migration` if git is
-installed).
+$ GIT_REPLACE_REF_BASE=refs/shard git log --oneline -n 5
+b49d35c828 (HEAD -> main, replaced) Git 2.37
+49c837424a Merge branch 'jc/revert-show-parent-info'
+5dba4d6540 Merge tag 'l10n-2.37.0-rnd1' of https://github.com/git-l10n/git-po
+fc0f8bcd64 revert: config documentation fixes
+71e3a31e40 l10n: sv.po: Update Swedish translation (5367t0f0u)
+```
 
-The user discussion and development of Git take place on the Git
-mailing list -- everyone is welcome to post bug reports, feature
-requests, comments and patches to git@vger.kernel.org (read
-[Documentation/SubmittingPatches][] for instructions on patch submission
-and [Documentation/CodingGuidelines][]).
+License
+-------
 
-Those wishing to help with error message, usage and informational message
-string translations (localization l10) should see [po/README.md][]
-(a `po` file is a Portable Object file that holds the translations).
-
-To subscribe to the list, send an email with just "subscribe git" in
-the body to majordomo@vger.kernel.org (not the Git list). The mailing
-list archives are available at <https://lore.kernel.org/git/>,
-<http://marc.info/?l=git> and other archival sites.
-
-Issues which are security relevant should be disclosed privately to
-the Git Security mailing list <git-security@googlegroups.com>.
-
-The maintainer frequently sends the "What's cooking" reports that
-list the current status of various development topics to the mailing
-list.  The discussion following them give a good reference for
-project status, development direction and remaining tasks.
-
-The name "git" was given by Linus Torvalds when he wrote the very
-first version. He described the tool as "the stupid content tracker"
-and the name as (depending on your mood):
-
- - random three-letter combination that is pronounceable, and not
-   actually used by any common UNIX command.  The fact that it is a
-   mispronunciation of "get" may or may not be relevant.
- - stupid. contemptible and despicable. simple. Take your pick from the
-   dictionary of slang.
- - "global information tracker": you're in a good mood, and it actually
-   works for you. Angels sing, and a light suddenly fills the room.
- - "goddamn idiotic truckload of sh*t": when it breaks
-
-[INSTALL]: INSTALL
-[Documentation/gittutorial.txt]: Documentation/gittutorial.txt
-[Documentation/giteveryday.txt]: Documentation/giteveryday.txt
-[Documentation/gitcvs-migration.txt]: Documentation/gitcvs-migration.txt
-[Documentation/SubmittingPatches]: Documentation/SubmittingPatches
-[Documentation/CodingGuidelines]: Documentation/CodingGuidelines
-[po/README.md]: po/README.md
+This repository is equivalent to [Git](https://github.com/git/git) at the `v2.37.0` tag, except for this `README.md` file. As such, this repository is available under the LGPL v2.1 public license. See `LGPL-2.1` for details.
