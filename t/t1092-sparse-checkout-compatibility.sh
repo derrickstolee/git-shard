@@ -548,7 +548,7 @@ test_expect_success 'blame with pathspec inside sparse definition' '
 			deep/deeper1/a \
 			deep/deeper1/deepest/a
 	do
-		test_all_match git blame $file
+		test_all_match git blame $file || return 1
 	done
 '
 
@@ -1542,7 +1542,7 @@ test_expect_success 'sparse index is not expanded: blame' '
 			deep/deeper1/a \
 			deep/deeper1/deepest/a
 	do
-		ensure_not_expanded blame $file
+		ensure_not_expanded blame $file || return 1
 	done
 '
 
@@ -1828,4 +1828,122 @@ test_expect_success 'checkout behaves oddly with df-conflict-2' '
 	test_cmp full-checkout-err sparse-index-err
 '
 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< HEAD
+================================
+test_expect_success 'mv directory from out-of-cone to in-cone' '
+	init_repos &&
+
+	# <source> as a sparse directory (or SKIP_WORKTREE_DIR without enabling
+	# sparse index).
+	test_all_match git mv --sparse folder1 deep &&
+	test_all_match git status --porcelain=v2 &&
+	test_sparse_match git ls-files -t &&
+	git -C sparse-checkout ls-files -t >actual &&
+	grep -e "H deep/folder1/0/0/0" actual &&
+	grep -e "H deep/folder1/0/1" actual &&
+	grep -e "H deep/folder1/a" actual &&
+
+	test_all_match git reset --hard &&
+
+	# <source> as a directory deeper than sparse index boundary (where
+	# sparse index will expand).
+	test_sparse_match git mv --sparse folder1/0 deep &&
+	test_sparse_match git status --porcelain=v2 &&
+	test_sparse_match git ls-files -t &&
+	git -C sparse-checkout ls-files -t >actual &&
+	grep -e "H deep/0/0/0" actual &&
+	grep -e "H deep/0/1" actual
+'
+
+test_expect_success 'rm pathspec inside sparse definition' '
+	init_repos &&
+
+	test_all_match git rm deep/a &&
+	test_all_match git status --porcelain=v2 &&
+
+	# test wildcard
+	run_on_all git reset --hard &&
+	test_all_match git rm deep/* &&
+	test_all_match git status --porcelain=v2 &&
+
+	# test recursive rm
+	run_on_all git reset --hard &&
+	test_all_match git rm -r deep &&
+	test_all_match git status --porcelain=v2
+'
+
+test_expect_success 'rm pathspec outside sparse definition' '
+	init_repos &&
+
+	for file in folder1/a folder1/0/1
+	do
+		test_sparse_match test_must_fail git rm $file &&
+		test_sparse_match test_must_fail git rm --cached $file &&
+		test_sparse_match git rm --sparse $file &&
+		test_sparse_match git status --porcelain=v2 || return 1
+	done &&
+
+	cat >folder1-full <<-EOF &&
+	rm ${SQ}folder1/0/0/0${SQ}
+	rm ${SQ}folder1/0/1${SQ}
+	rm ${SQ}folder1/a${SQ}
+	EOF
+
+	cat >folder1-sparse <<-EOF &&
+	rm ${SQ}folder1/${SQ}
+	EOF
+
+	# test wildcard
+	run_on_sparse git reset --hard &&
+	run_on_sparse git sparse-checkout reapply &&
+	test_sparse_match test_must_fail git rm folder1/* &&
+	run_on_sparse git rm --sparse folder1/* &&
+	test_cmp folder1-full sparse-checkout-out &&
+	test_cmp folder1-sparse sparse-index-out &&
+	test_sparse_match git status --porcelain=v2 &&
+
+	# test recursive rm
+	run_on_sparse git reset --hard &&
+	run_on_sparse git sparse-checkout reapply &&
+	test_sparse_match test_must_fail git rm --sparse folder1 &&
+	run_on_sparse git rm --sparse -r folder1 &&
+	test_cmp folder1-full sparse-checkout-out &&
+	test_cmp folder1-sparse sparse-index-out &&
+	test_sparse_match git status --porcelain=v2
+'
+
+test_expect_success 'rm pathspec expands index when necessary' '
+	init_repos &&
+
+	# in-cone pathspec (do not expand)
+	ensure_not_expanded rm "deep/deep*" &&
+	test_must_be_empty sparse-index-err &&
+
+	# out-of-cone pathspec (expand)
+	! ensure_not_expanded rm --sparse "folder1/a*" &&
+	test_must_be_empty sparse-index-err &&
+
+	# pathspec that should expand index
+	! ensure_not_expanded rm "*/a" &&
+	test_must_be_empty sparse-index-err &&
+
+	! ensure_not_expanded rm "**a" &&
+	test_must_be_empty sparse-index-err
+'
+
+test_expect_success 'sparse index is not expanded: rm' '
+	init_repos &&
+
+	ensure_not_expanded rm deep/a &&
+
+	# test in-cone wildcard
+	git -C sparse-index reset --hard &&
+	ensure_not_expanded rm deep/* &&
+
+	# test recursive rm
+	git -C sparse-index reset --hard &&
+	ensure_not_expanded rm -r deep
+'
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 0e66bc1b215 (t: detect and signal failure within loop)
 test_done
