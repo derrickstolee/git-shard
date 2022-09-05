@@ -9,7 +9,7 @@ The root commit of this repository shares a root tree with Git's `v2.37.0` tag. 
 $ git clone https://github.com/git/git git-old
 $ git clone https://github.com/derrickstolee/git-shard git-new
 
-$ echo "$(pwd)/git-old/.git/objects >git-new/.git/objects/info/alternates
+$ echo "$(pwd)/git-old/.git/objects" > git-new/.git/objects/info/alternates
 $ cd git-new
 
 $ GIT_REPLACE_REF_BASE=refs/shard git replace \
